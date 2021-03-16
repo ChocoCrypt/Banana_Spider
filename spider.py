@@ -10,7 +10,9 @@ import networkx as nx
 
 
 def get_all_xpath_inputs(driver , url):
-    driver.get(url)
+    if(driver.current_url != url):
+        driver.get(url)
+        sleep(1)
     content = driver.find_element_by_xpath("/html").get_attribute("innerHTML")
     soup = BeautifulSoup(content , "lxml")
     inputs = soup.find_all("input" , {"type":"text"})
@@ -114,16 +116,33 @@ def generate_graph(son_father_list):
         touple = (left,right)
         touples.append(touple)
 
-    print(touples)
+    #print(touples)
     nx.draw(G)
     plt.show()
 
 
 
+def get_xpaths_inputs_recursiveley(driver , root_url):
+
+    cont = recursively_scrawl(driver , root_url , 2 )
+    all_xpaths = []
+    for i in cont:
+        try:
+            xpaths = get_all_xpath_inputs(driver , i["son"])
+            for j in xpaths:
+                info = {
+                    "url":i["son"],
+                    "xpath":j
+                }
+                all_xpaths.append(info)
+        except Exception as e:
+            pass
+    return(all_xpaths)
 
 
 driver = webdriver.Chrome()
-cont = recursively_scrawl(driver , "https://tmedweb.tulane.edu/content_open" , 2 )
-generate_graph(cont)
+goal = get_xpaths_inputs_recursiveley(driver , "https://tmedweb.tulane.edu/content_open")
+print(goal)
+
 driver.close()
 
