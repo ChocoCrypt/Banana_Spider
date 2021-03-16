@@ -93,7 +93,7 @@ def generate_graph(son_father_list):
 
 
 driver = webdriver.Chrome()
-cont = recursively_scrawl(driver , "https://tmedweb.tulane.edu/content_open" , 3 )
+cont = recursively_scrawl(driver , "https://tmedweb.tulane.edu/content_open" , 4 )
 generate_graph(cont)
 driver.close()
 
