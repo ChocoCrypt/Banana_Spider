@@ -8,6 +8,18 @@ import networkx as nx
 
 
 
+
+def get_all_xpath_inputs(driver , url):
+    driver.get(url)
+    content = driver.find_element_by_xpath("/html").get_attribute("innerHTML")
+    soup = BeautifulSoup(content , "lxml")
+    inputs = soup.find_all("input" , {"type":"text"})
+    xpaths = []
+    for i in inputs:
+        xpath = xpath_soup(i)
+        xpaths.append(xpath)
+    return(xpaths)
+
 #get spath of a soup element
 def xpath_soup(element):
     components = []
