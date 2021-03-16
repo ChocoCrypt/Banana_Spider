@@ -25,7 +25,7 @@ def get_hrefs( driver , main_url):
             except:
                 pass
             try:
-                if(link[0]!= "h"):
+                if((link[0]!= "h")and(link[1]!="t")and(link[2]!="t")and(link[3]!="p")):
                     link = main_url+"/"+link
             except:
                 pass
@@ -93,7 +93,7 @@ def generate_graph(son_father_list):
 
 
 driver = webdriver.Chrome()
-cont = recursively_scrawl(driver , "https://tmedweb.tulane.edu/content_open" , 4 )
+cont = recursively_scrawl(driver , "https://tmedweb.tulane.edu/content_open" , 2 )
 generate_graph(cont)
 driver.close()
 
