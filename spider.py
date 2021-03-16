@@ -77,13 +77,13 @@ def generate_graph(son_father_list):
     for i in son_father_list:
         left = i["father"]
         right = i["son"]
+        try:
+            G.add_edge(left, right)
+        except:
+            pass
         touple = (left,right)
         touples.append(touple)
-        try:
-            G.add_edges_from(touples)
-        except Exception as e:
-            print("error in {} , error:{}".format(touple,e))
-            touples.remove(touple)
+
     print(touples)
     nx.draw(G)
     plt.show()
@@ -93,7 +93,7 @@ def generate_graph(son_father_list):
 
 
 driver = webdriver.Chrome()
-cont = recursively_scrawl(driver , "https://tmedweb.tulane.edu/content_open" , 2 )
+cont = recursively_scrawl(driver , "https://tmedweb.tulane.edu/content_open" , 3 )
 generate_graph(cont)
 driver.close()
 
