@@ -25,7 +25,7 @@ def get_hrefs( driver , main_url):
             except:
                 pass
             try:
-                if(link[0]!= "h"):
+                if(link[0]!= "h" and link[1]!="t" and link2!= "t"):
                     link = main_url+"/"+link
             except:
                 pass
