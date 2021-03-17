@@ -1,4 +1,6 @@
 from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
+import pandas as pd
 import matplotlib.pyplot as plt
 from time import sleep
 from progress.bar import Bar
@@ -7,6 +9,23 @@ import networkx as nx
 
 
 
+
+def get_all_xss_attacks():
+    with open("attack_vectors/xss.txt") as file:
+        texto = file.read()
+        vectors = texto.split("\n")
+    return(vectors)
+
+
+def test_vector(xpath_input_object , attack_chunk):
+    url  = xpath_input_object['url']
+    xpath = xpath_input_object["xpath"]
+    driver.get(url)
+    sleep(1)
+    for i in attack_chunk:
+        element = driver.find_element_by_xpath(xpath)
+        element.send_keys(i)
+        element.send_keys(Keys.RETURN)
 
 
 def get_all_xpath_inputs(driver , url):
