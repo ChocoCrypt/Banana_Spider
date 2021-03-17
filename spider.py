@@ -98,7 +98,8 @@ def get_hrefs( driver , main_url):
                 pass
             hrefs.append(link)
         return(hrefs)
-    except:
+    except Exception as e:
+        print("returned null because of error ", e)
         return([])
 
 def check_list(elem , lista):
@@ -180,7 +181,7 @@ def get_xpaths_inputs_recursiveley(driver , root_url , depth):
 
 
 driver = webdriver.Chrome()
-goal = get_xpaths_inputs_recursiveley(driver , "https://sandwichqbano.com" , 1)
+goal = get_xpaths_inputs_recursiveley(driver , "https://tmedweb.tulane.edu/content_open" , 1)
 xss_vectors = get_all_xss_attacks()
 for i in goal:
     test_vector(driver , i , xss_vectors)
