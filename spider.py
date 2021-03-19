@@ -44,7 +44,7 @@ def get_all_xss_attacks():
     return(vectors)
 
 
-def test_vector( xpath_input_object , attack_vector):
+def test_vector_xss( xpath_input_object , attack_vector):
     print("starting thread #{} ".format(threading.current_thread().getName()))
     driver = webdriver.Chrome()
     url  = xpath_input_object['url']
@@ -68,11 +68,11 @@ def test_vector( xpath_input_object , attack_vector):
     driver.close()
     print("thread #{} done".format(threading.current_thread().getName()))
 
-def parallel_test_vector(xpath_input_object , attack_vector , n_threads):
+def parallel_test_vector_xss(xpath_input_object , attack_vector , n_threads):
     chunks = chunks_n(attack_vector , n_threads)
     threads = []
     for i in range(0 , len(chunks)):
-        t = threading.Thread(target = test_vector , args = (xpath_input_object , chunks[i] ,) , name = "{}".format(i))
+        t = threading.Thread(target = test_vector_xss, args = (xpath_input_object , chunks[i] ,) , name = "{}".format(i))
         t.start()
         threads.append(t)
 
@@ -221,7 +221,7 @@ goal = get_xpaths_inputs_recursiveley(driver , "https://tmedweb.tulane.edu/conte
 xss_vectors = get_all_xss_attacks()
 driver.close()
 for i in goal:
-    parallel_test_vector( i , xss_vectors , 4)
+    parallel_test_vector_xss( i , xss_vectors , 4)
 
 print(goal)
 
