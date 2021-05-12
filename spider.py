@@ -7,15 +7,15 @@ from time import sleep
 from progress.bar import Bar
 from bs4 import BeautifulSoup
 import networkx as nx
-
+from os import getcwd
 
 
 
 def chunks_n(lista , n):
     chunk_size = int(len(lista)/n)
-    print(chunk_size)
+    print("Chunk size:", chunk_size)
     faltante = len(lista) - (chunk_size*n)
-    print(faltante)
+    print("Faltante", faltante)
     chunks = []
     for i in range(0,n):
         if(i == n-1):
@@ -38,7 +38,7 @@ def is_alerted(driver):
 
 
 def get_all_xss_attacks():
-    with open("attack_vectors/xss.txt") as file:
+    with open("attack_vectors/xss.txt",encoding='utf8') as file:
         texto = file.read()
         vectors = texto.split("\n")
     return(vectors)
@@ -53,7 +53,7 @@ def test_vector_xss( xpath_input_object , attack_vector):
     sleep(3)
     for i in attack_vector:
         try:
-            print("\n testing {} at {} in {} at thread #{}".format(i , xpath , url , threading.current_thread().getName()))
+            #print("\n testing {} at {} in {} at thread #{}".format(i , xpath , url , threading.current_thread().getName()))
             driver.get(url)
             sleep(1)
             element = driver.find_element_by_xpath(xpath)
@@ -62,7 +62,7 @@ def test_vector_xss( xpath_input_object , attack_vector):
             sleep(0.5)
             if(is_alerted(driver)):
                 #it means it was exploited
-                print("{} exploited in  {} with ".format(url , xpath , i))
+                print("{} exploited in  {} with {}".format(url , xpath , i))
         except:
             print("error exploiting {} in {} at {}".format(i , xpath , url))
     driver.close()
@@ -146,7 +146,7 @@ def check_list(elem , lista):
 
 def recursively_scrawl(driver , main_url , deph):
     start = get_hrefs(driver , main_url)
-    first = []
+    first = [{"father":main_url,"son":main_url}]
     for i in start:
         father = main_url
         son = i
@@ -216,7 +216,12 @@ def get_xpaths_inputs_recursiveley(driver , root_url , depth):
     return(all_xpaths)
 
 
-driver = webdriver.Chrome()
+chromeOptions = webdriver.ChromeOptions()
+prefs = {"download.default_directory" : "".join([getcwd(), "\Downloads"])}
+print("".join([getcwd(), "\Downloads"]))
+chromeOptions.add_experimental_option("prefs",prefs)
+driver = webdriver.Chrome(chrome_options = chromeOptions)
+
 goal = get_xpaths_inputs_recursiveley(driver , "https://tmedweb.tulane.edu/content_open" , 1)
 xss_vectors = get_all_xss_attacks()
 driver.close()
@@ -224,6 +229,3 @@ for i in goal:
     parallel_test_vector_xss( i , xss_vectors , 4)
 
 print(goal)
-
-driver.close()
-
