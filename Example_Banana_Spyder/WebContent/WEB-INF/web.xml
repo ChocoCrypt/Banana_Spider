@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://java.sun.com/xml/ns/javaee" xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd" version="3.0">
+  <display-name>Example_Banana_Spyder</display-name>
+  <welcome-file-list>
+    <welcome-file>login.html</welcome-file>
+  </welcome-file-list>
+  <filter>
+    <filter-name>EmailFilter</filter-name>
+    <filter-class>com.journaldev.servlet.filters.EmailFilter</filter-class>
+  </filter>
+  <filter>
+    <filter-name>DateFilter</filter-name>
+    <filter-class>com.journaldev.servlet.filters.DateFilter</filter-class>
+  </filter>
+  <filter>
+    <filter-name>Credit_CardFilter</filter-name>
+    <filter-class>com.journaldev.servlet.filters.Credit_CardFilter</filter-class>
+  </filter>
+  <filter>
+    <filter-name>reg_exFilter</filter-name>
+    <filter-class>com.journaldev.servlet.filters.reg_exFilter</filter-class>
+  </filter>
+  <filter-mapping>
+    <filter-name>EmailFilter</filter-name>
+    <url-pattern>/LoginServlet</url-pattern>
+  </filter-mapping>
+  <filter-mapping>
+    <filter-name>DateFilter</filter-name>
+    <url-pattern>/LoginServlet</url-pattern>
+  </filter-mapping>
+  <filter-mapping>
+    <filter-name>Credit_CardFilter</filter-name>
+    <url-pattern>/LoginServlet</url-pattern>
+  </filter-mapping>
+  <filter-mapping>
+    <filter-name>reg_exFilter</filter-name>
+    <url-pattern>/LoginServlet</url-pattern>
+  </filter-mapping>
+</web-app>
