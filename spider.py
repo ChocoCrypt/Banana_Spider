@@ -1,7 +1,5 @@
 from selenium import webdriver
-import gg
 from selenium.webdriver.common.keys import Keys
-import pandas as pd
 import matplotlib.pyplot as plt
 from time import sleep
 from progress.bar import Bar
@@ -11,7 +9,7 @@ from os import getcwd
 import sys
 import os
 from multiprocessing import Process, current_process
-import traceback
+import re
 
 def chunks_n(lista , n):
     chunk_size = int(len(lista)/n)
@@ -45,11 +43,19 @@ def get_all_xss_attacks():
         vectors = texto.split("\n")
     return(vectors)
 
+def get_all_xxe_attacks():
+    with open("attack_vectors/xxe.txt",encoding='utf8') as file:
+        texto = file.read()
+        vectors = texto.split("\n")
+    return(vectors)
 
-def test_vector_xss( xpath_input_object , attack_vector):
+def test_vector( xpath_input_object , attack_vector, show):
 
     print(f"starting thread # {current_process().name}")
-    driver = webdriver.Chrome()
+    chrome_options = webdriver.ChromeOptions()
+    if not show:
+        chrome_options.add_argument("--headless")
+    driver = webdriver.Chrome(options=chrome_options)
     url  = xpath_input_object['url']
     xpath = xpath_input_object["xpath"]
     driver.get(url)
@@ -58,29 +64,40 @@ def test_vector_xss( xpath_input_object , attack_vector):
         try:
             #print(f"\n testing {i} at {xpath} in {url} at thread #{current_process().name}")
             driver.get(url)
-            sleep(1)
             element = driver.find_element_by_xpath(xpath)
+            name = element.get_attribute("name")
+            max_chars = element.get_attribute("maxlength")
+            sleep(1)
             element.send_keys(i)
             element.send_keys(Keys.RETURN)
             sleep(0.5)
+            if not max_chars is None:
+                new_url = url+"?"+name+"="+i
+                driver.get(new_url)
+                sleep(1)
             if(is_alerted(driver)):
                 #it means it was exploited
-                print(f"{url} exploited in  {xpath} with {i}")
+                report_file = open("successfull_attacks.txt", 'a')
+                str = f"{url} exploited in  {xpath} with {i}"
+                print(str)
+                report_file.write(str+'\n')
+                report_file.close()
 
         except KeyboardInterrupt:
             print("Exiting, Could perform some seconds")
             exit(0)
-        except:
+        except Exception as e:
+            print(e)
             print(f"error exploiting {i} in {xpath} at {url}")
-
     driver.close()
     #print(f"thread #{threading.current_thread().getName()} done")
 
-def parallel_test_vector_xss(xpath_input_object , attack_vector , n_threads):
+
+def parallel_test_vector(xpath_input_object , attack_vector , n_threads, show):
     chunks = chunks_n(attack_vector , n_threads)
     threads = []
     for i in range(0 , len(chunks)):
-        t = Process(target = test_vector_xss, args = (xpath_input_object , chunks[i] ,) , name = f"{i}")
+        t = Process(target = test_vector, args = (xpath_input_object , chunks[i] , show ,) , name = f"{i}")
         t.start()
         threads.append(t)
 
@@ -117,8 +134,8 @@ def get_all_xpath_inputs(driver , url):
         sleep(1)
     content = driver.find_element_by_xpath("/html").get_attribute("innerHTML")
     soup = BeautifulSoup(content , "lxml")
-    inputs = soup.find_all(check_length_input)
-    #inputs = soup.find_all("input" , {"type":"text"})
+    # inputs = soup.find_all(check_length_input)
+    inputs = soup.find_all("input" , {"type":"text"})
     xpaths = []
     for i in inputs:
         xpath = xpath_soup(i)
@@ -176,18 +193,28 @@ def check_list(elem , lista):
             return(False)
     return(True)
 
+def load_whitelist():
+    expressions = []
+    file = open('whitelist_urls.txt', encoding='utf8')
+    for line in file.readlines():
+        expressions.append(line)
+    return expressions
+
 def recursively_scrawl(driver , main_url , deph):
     start = get_hrefs(driver , main_url)
     first = [{"father":main_url,"son":main_url}]
+    expressions = load_whitelist()
     for i in start:
-        father = main_url
-        son = i
-        couple = {
-            "father":father,
-            "son":son
-        }
-        first.append(couple)
-
+        coincidence = [bool(re.match(j, i)) for j in expressions]
+        if not True in coincidence:
+            father = main_url
+            son = i
+            couple = {
+                "father":father,
+                "son":son
+            }
+            first.append(couple)
+    
     for i in range(deph-1):
         print(f"\n {i+1} recursion")
         bar = Bar("progress..." , max=len(first))
@@ -247,18 +274,3 @@ def get_xpaths_inputs_recursiveley(driver , root_url , depth):
         except Exception as e:
             pass
     return(all_xpaths)
-
-if __name__ == "__main__":
-    chromeOptions = webdriver.ChromeOptions()
-    prefs = {"download.default_directory" : "".join([getcwd(), "\Downloads"])}
-    print("".join([getcwd(), "\Downloads"]))
-    chromeOptions.add_experimental_option("prefs",prefs)
-    driver = webdriver.Chrome(chrome_options = chromeOptions)
-
-    goal = get_xpaths_inputs_recursiveley(driver , "https://tmedweb.tulane.edu/content_open" , 2)
-    xss_vectors = get_all_xss_attacks()
-    driver.close()
-    for i in goal:
-        parallel_test_vector_xss( i , xss_vectors , 4)
-
-    print(goal)

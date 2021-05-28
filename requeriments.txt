@@ -1,6 +1,4 @@
 selenium
-pandas
 progress
 bs4
-networkx
 lxml
